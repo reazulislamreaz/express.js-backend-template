@@ -1,0 +1,9 @@
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-at-least-32-characters-long';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-at-least-32-chars';
+process.env.DATABASE_URL =
+  'postgresql://postgres:postgres@localhost:5432/express_template_test?schema=public';
+process.env.MONGODB_URI = 'mongodb://localhost:27017/express_template_test';
+process.env.MONGODB_ENABLED = 'false';
+process.env.CSRF_ENABLED = 'false';
+process.env.LOG_PRETTY = 'false';

@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.git
+.github
+.env
+.env.*
+*.md
+tests
+vitest.config.ts
+docker-compose*.yml
+Dockerfile
+.prettierrc
+eslint.config.js
