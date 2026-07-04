@@ -71,54 +71,55 @@ src/
 
 ## API Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/v1/health` | No | Liveness check |
-| GET | `/api/v1/health/ready` | No | Readiness check (DB connectivity) |
-| POST | `/api/v1/auth/register` | No | Register new user |
-| POST | `/api/v1/auth/login` | No | Login |
-| POST | `/api/v1/auth/refresh` | No | Refresh access token |
-| POST | `/api/v1/auth/logout` | No | Revoke refresh token |
-| GET | `/api/v1/auth/me` | Yes | Current user profile |
-| GET | `/api/v1/users` | Admin | List users (paginated) |
-| GET | `/api/v1/users/:id` | Yes | Get user by ID |
-| PATCH | `/api/v1/users/:id` | Yes | Update user |
-| GET | `/api/v1/users/:id/activity` | Yes | User activity log (MongoDB) |
+| Method | Endpoint                     | Auth  | Description                       |
+| ------ | ---------------------------- | ----- | --------------------------------- |
+| GET    | `/api/v1/health`             | No    | Liveness check                    |
+| GET    | `/api/v1/health/ready`       | No    | Readiness check (DB connectivity) |
+| POST   | `/api/v1/auth/register`      | No    | Register new user                 |
+| POST   | `/api/v1/auth/login`         | No    | Login                             |
+| POST   | `/api/v1/auth/refresh`       | No    | Refresh access token              |
+| POST   | `/api/v1/auth/logout`        | No    | Revoke refresh token              |
+| GET    | `/api/v1/auth/me`            | Yes   | Current user profile              |
+| GET    | `/api/v1/users`              | Admin | List users (paginated)            |
+| GET    | `/api/v1/users/:id`          | Yes   | Get user by ID                    |
+| PATCH  | `/api/v1/users/:id`          | Yes   | Update user                       |
+| GET    | `/api/v1/users/:id/activity` | Yes   | User activity log (MongoDB)       |
 
 ## Security
 
-| Protection | Implementation |
-|------------|----------------|
-| HTTP headers | Helmet |
-| CORS | Configurable origins via `CORS_ORIGINS` |
-| Rate limiting | Global + stricter auth endpoints |
-| SQL injection | Prisma parameterized queries |
-| NoSQL injection | Custom middleware (Express 5 compatible) |
-| XSS | Request body/query sanitization |
-| CSRF | Optional via `CSRF_ENABLED=true` (cookie-based sessions) |
-| Password hashing | bcrypt (configurable rounds) |
-| JWT | Access + refresh token rotation |
+| Protection       | Implementation                                           |
+| ---------------- | -------------------------------------------------------- |
+| HTTP headers     | Helmet                                                   |
+| CORS             | Configurable origins via `CORS_ORIGINS`                  |
+| Rate limiting    | Global + stricter auth endpoints                         |
+| SQL injection    | Prisma parameterized queries                             |
+| NoSQL injection  | Custom middleware (Express 5 compatible)                 |
+| XSS              | Request body/query sanitization                          |
+| CSRF             | Optional via `CSRF_ENABLED=true` (cookie-based sessions) |
+| Password hashing | bcrypt (configurable rounds)                             |
+| JWT              | Access + refresh token rotation                          |
 
 ## Environment Variables
 
 See [`.env.example`](.env.example) for all configuration options.
 
 **Required in production:**
+
 - `JWT_SECRET` (min 32 chars)
 - `JWT_REFRESH_SECRET` (min 32 chars)
 - `DATABASE_URL`
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start with hot reload |
-| `npm run build` | Compile TypeScript |
-| `npm start` | Run production build |
-| `npm test` | Run tests |
-| `npm run lint` | ESLint |
+| Command              | Description           |
+| -------------------- | --------------------- |
+| `npm run dev`        | Start with hot reload |
+| `npm run build`      | Compile TypeScript    |
+| `npm start`          | Run production build  |
+| `npm test`           | Run tests             |
+| `npm run lint`       | ESLint                |
 | `npm run db:migrate` | Run Prisma migrations |
-| `npm run db:studio` | Open Prisma Studio |
+| `npm run db:studio`  | Open Prisma Studio    |
 
 ## Adding a New Module
 
@@ -129,3 +130,7 @@ See [`.env.example`](.env.example) for all configuration options.
 ## License
 
 MIT
+
+## Created By
+
+Reazul Islam Reaz
