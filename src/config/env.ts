@@ -32,6 +32,17 @@ const envSchema = z.object({
     .transform((v) => v === 'true')
     .default('true'),
 
+  REDIS_URL: z.string().url().default('redis://localhost:6379'),
+  REDIS_ENABLED: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('true'),
+  QUEUE_PREFIX: z.string().min(1).default('express-template'),
+  QUEUE_WORKERS_ENABLED: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('true'),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   LOG_PRETTY: z
     .string()

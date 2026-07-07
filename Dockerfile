@@ -12,6 +12,7 @@ RUN npm ci
 # --- Build ---
 FROM deps AS build
 COPY tsconfig.json ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma
 COPY src ./src
 RUN npx prisma generate
@@ -32,6 +33,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package.json ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma
 
 USER express

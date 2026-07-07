@@ -5,5 +5,7 @@ process.env.DATABASE_URL =
   'postgresql://postgres:postgres@localhost:5432/express_template_test?schema=public';
 process.env.MONGODB_URI = 'mongodb://localhost:27017/express_template_test';
 process.env.MONGODB_ENABLED = 'false';
+process.env.REDIS_ENABLED = 'false';
+process.env.QUEUE_WORKERS_ENABLED = 'false';
 process.env.CSRF_ENABLED = 'false';
 process.env.LOG_PRETTY = 'false';

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '@/lib/database/index.js';
 import { env } from '@/config/env.js';
-import { getMongoDb } from '@/lib/database/index.js';
+import { getMongoDb, getRedis } from '@/lib/database/index.js';
 
 const router = Router();
 
@@ -33,6 +33,16 @@ router.get('/ready', async (_req: Request, res: Response) => {
       checks.mongodb = 'ok';
     } catch {
       checks.mongodb = 'error';
+    }
+  }
+
+  if (env.REDIS_ENABLED) {
+    try {
+      const redis = getRedis();
+      await redis.ping();
+      checks.redis = 'ok';
+    } catch {
+      checks.redis = 'error';
     }
   }
 

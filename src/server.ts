@@ -3,9 +3,11 @@ import { createApp } from './app.js';
 import { env } from '@/config/env.js';
 import { logger } from '@/lib/logger.js';
 import { connectDatabases, disconnectDatabases } from '@/lib/database/index.js';
+import { closeQueues, startQueueWorkers } from '@/lib/queue/index.js';
 
 async function bootstrap() {
   await connectDatabases();
+  await startQueueWorkers();
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
@@ -15,6 +17,7 @@ async function bootstrap() {
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutting down gracefully');
     server.close(async () => {
+      await closeQueues();
       await disconnectDatabases();
       logger.info('Server closed');
       process.exit(0);
@@ -41,5 +44,7 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
   logger.fatal({ err }, 'Failed to start server');
-  process.exit(1);
+  Promise.allSettled([closeQueues(), disconnectDatabases()]).finally(() => {
+    process.exit(1);
+  });
 });

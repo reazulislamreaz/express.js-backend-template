@@ -8,6 +8,7 @@ Production-ready Express.js backend template with clean layered architecture, de
 - **TypeScript** — Full type safety with strict mode
 - **Dual Database Support** — PostgreSQL (Prisma ORM) + MongoDB (native driver)
 - **Authentication** — JWT access tokens with refresh token rotation
+- **Background Jobs** — Redis + BullMQ queue foundation with graceful worker lifecycle
 - **Security** — Helmet, CORS, rate limiting, XSS sanitization, NoSQL injection prevention, HPP, optional CSRF
 - **Validation** — Zod schemas with middleware
 - **Logging** — Structured logging with Pino (request IDs, redaction)
@@ -35,7 +36,10 @@ docker compose -f docker-compose.dev.yml up -d
 # 3. Run migrations
 npm run db:migrate
 
-# 4. Start dev server
+# 4. Seed the default admin user
+npm run db:seed
+
+# 5. Start dev server
 npm run dev
 ```
 
@@ -57,6 +61,7 @@ docker compose up --build
 src/
 ├── config/           # Environment validation
 ├── lib/              # Shared utilities (logger, crypto, database)
+│   └── queue/        # BullMQ queues and workers
 ├── middleware/       # Express middleware
 ├── modules/          # Feature modules (auth, users, health)
 │   └── auth/
@@ -104,6 +109,51 @@ src/
 | Password hashing | bcrypt (configurable rounds)                             |
 | JWT              | Access + refresh token rotation                          |
 
+## Admin Seed
+
+Create or update the default admin user:
+
+```bash
+npm run db:seed
+```
+
+Configure the seed with:
+
+```bash
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=AdminPass123
+ADMIN_FIRST_NAME=System
+ADMIN_LAST_NAME=Admin
+```
+
+The seed is idempotent. If the email already exists, it promotes the user to `ADMIN`, reactivates the account, and updates the password.
+
+## Background Jobs
+
+Redis and BullMQ are included for background processing. The template includes an `email` queue with retry/backoff defaults, failed-job logging, and graceful shutdown.
+
+Use `addEmailJob` from `src/lib/queue` when you add email provider integration:
+
+```ts
+import { addEmailJob } from '@/lib/queue/index.js';
+
+await addEmailJob({
+  to: 'jane@example.com',
+  subject: 'Welcome',
+  template: 'welcome',
+  payload: { firstName: 'Jane' },
+});
+```
+
+Redis settings:
+
+```bash
+REDIS_URL=redis://localhost:6379
+REDIS_ENABLED=true
+QUEUE_PREFIX=express-template
+QUEUE_WORKERS_ENABLED=true
+```
+
 ## Environment Variables
 
 See [`.env.example`](.env.example) for all configuration options.
@@ -124,6 +174,7 @@ See [`.env.example`](.env.example) for all configuration options.
 | `npm test`           | Run tests             |
 | `npm run lint`       | ESLint                |
 | `npm run db:migrate` | Run Prisma migrations |
+| `npm run db:seed`    | Create/update admin user |
 | `npm run db:studio`  | Open Prisma Studio    |
 
 ## Adding a New Module

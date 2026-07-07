@@ -80,7 +80,7 @@ export const openApiDocument = {
                   success: true,
                   data: {
                     status: 'ready',
-                    checks: { postgres: 'ok', mongodb: 'ok' },
+                    checks: { postgres: 'ok', mongodb: 'ok', redis: 'ok' },
                     timestamp: '2026-07-07T05:30:00.000Z',
                   },
                 },
@@ -96,7 +96,7 @@ export const openApiDocument = {
                   success: false,
                   data: {
                     status: 'degraded',
-                    checks: { postgres: 'ok', mongodb: 'error' },
+                    checks: { postgres: 'ok', mongodb: 'error', redis: 'ok' },
                     timestamp: '2026-07-07T05:30:00.000Z',
                   },
                 },
