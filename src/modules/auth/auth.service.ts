@@ -4,6 +4,7 @@ import {
   verifyPassword,
   generateAccessToken,
   generateRefreshToken,
+  hashRefreshToken,
   getRefreshTokenExpiry,
 } from '@/lib/crypto.js';
 import { ConflictError, UnauthorizedError } from '@/shared/errors/index.js';
@@ -44,32 +45,41 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const stored = await authRepository.findRefreshToken(refreshToken);
+    const nextRefreshToken = generateRefreshToken();
+    const nextRefreshTokenHash = hashRefreshToken(nextRefreshToken);
+    const nextExpiresAt = getRefreshTokenExpiry();
+    const rotated = await authRepository.rotateRefreshToken(
+      hashRefreshToken(refreshToken),
+      nextRefreshTokenHash,
+      nextExpiresAt,
+    );
 
-    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    if (rotated.status === 'invalid') {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
-    if (!stored.user.isActive) {
+    if (rotated.status === 'inactive') {
       throw new UnauthorizedError('Account is deactivated');
     }
 
-    await authRepository.revokeRefreshToken(refreshToken);
+    const accessToken = generateAccessToken({
+      sub: rotated.user.id,
+      email: rotated.user.email,
+      role: rotated.user.role,
+    });
 
-    const tokens = await this.issueTokens(
-      stored.user.id,
-      stored.user.email,
-      stored.user.role,
-    );
-
-    return { user: toSafeUser(stored.user), tokens };
+    return {
+      user: toSafeUser(rotated.user),
+      tokens: {
+        accessToken,
+        refreshToken: nextRefreshToken,
+        expiresIn: env.JWT_EXPIRES_IN,
+      },
+    };
   }
 
   async logout(refreshToken: string): Promise<void> {
-    const stored = await authRepository.findRefreshToken(refreshToken);
-    if (stored && !stored.revokedAt) {
-      await authRepository.revokeRefreshToken(refreshToken);
-    }
+    await authRepository.revokeRefreshTokenByHash(hashRefreshToken(refreshToken));
   }
 
   private async issueTokens(userId: string, email: string, role: AuthResponse['user']['role']) {
@@ -77,7 +87,7 @@ export class AuthService {
     const refreshToken = generateRefreshToken();
     const expiresAt = getRefreshTokenExpiry();
 
-    await authRepository.createRefreshToken(userId, refreshToken, expiresAt);
+    await authRepository.createRefreshToken(userId, hashRefreshToken(refreshToken), expiresAt);
 
     return {
       accessToken,

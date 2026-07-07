@@ -8,6 +8,7 @@ import { pinoHttp } from 'pino-http';
 import type { IncomingMessage } from 'node:http';
 import { env, corsOrigins } from '@/config/env.js';
 import { logger } from '@/lib/logger.js';
+import docsRoutes from '@/docs/swagger.routes.js';
 import routes from '@/routes/index.js';
 import {
   globalRateLimiter,
@@ -34,6 +35,8 @@ export function createApp() {
       },
     }),
   );
+
+  app.use(env.API_PREFIX, docsRoutes);
 
   app.use(
     helmet({

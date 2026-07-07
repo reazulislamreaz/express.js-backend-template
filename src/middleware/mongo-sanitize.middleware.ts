@@ -10,7 +10,9 @@ function sanitizeMongoKeys(value: unknown): unknown {
   if (value !== null && typeof value === 'object') {
     const sanitized: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      const safeKey = PROHIBITED_KEY_PATTERN.test(key) ? key.replace(/^\$/, '_').replace(/\./g, '_') : key;
+      const safeKey = PROHIBITED_KEY_PATTERN.test(key)
+        ? key.replace(/^\$/, '_').replace(/\./g, '_')
+        : key;
       sanitized[safeKey] = sanitizeMongoKeys(val);
     }
     return sanitized;
@@ -22,6 +24,15 @@ function sanitizeMongoKeys(value: unknown): unknown {
 export function mongoSanitize(req: Request, _res: Response, next: NextFunction): void {
   if (req.body && typeof req.body === 'object') {
     req.body = sanitizeMongoKeys(req.body);
+  }
+
+  if (req.query && typeof req.query === 'object') {
+    Object.defineProperty(req, 'query', {
+      value: sanitizeMongoKeys(req.query),
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
   }
 
   if (req.params && typeof req.params === 'object') {

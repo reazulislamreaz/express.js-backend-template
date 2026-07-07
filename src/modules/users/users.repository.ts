@@ -32,6 +32,14 @@ export class UsersRepository {
     return prisma.user.findUnique({ where: { id } });
   }
 
+  async exists(id: string): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return Boolean(user);
+  }
+
   async update(id: string, data: { firstName?: string; lastName?: string }) {
     return prisma.user.update({
       where: { id },

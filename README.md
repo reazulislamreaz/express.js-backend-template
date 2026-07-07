@@ -41,6 +41,9 @@ npm run dev
 
 Server runs at `http://localhost:3000`. API prefix: `/api/v1`.
 
+Interactive API docs are available at `http://localhost:3000/api/v1/docs`.
+The raw OpenAPI document is available at `http://localhost:3000/api/v1/openapi.json`.
+
 ### Docker (Full Stack)
 
 ```bash
@@ -73,6 +76,8 @@ src/
 
 | Method | Endpoint                     | Auth  | Description                       |
 | ------ | ---------------------------- | ----- | --------------------------------- |
+| GET    | `/api/v1/docs`               | No    | Swagger UI documentation          |
+| GET    | `/api/v1/openapi.json`       | No    | Raw OpenAPI specification         |
 | GET    | `/api/v1/health`             | No    | Liveness check                    |
 | GET    | `/api/v1/health/ready`       | No    | Readiness check (DB connectivity) |
 | POST   | `/api/v1/auth/register`      | No    | Register new user                 |

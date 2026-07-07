@@ -1,16 +1,7 @@
 import { Router } from 'express';
 import { authController } from './auth.controller.js';
-import {
-  registerSchema,
-  loginSchema,
-  refreshTokenSchema,
-} from './auth.validation.js';
-import {
-  validate,
-  asyncHandler,
-  authRateLimiter,
-  authenticate,
-} from '@/middleware/index.js';
+import { registerSchema, loginSchema, refreshTokenSchema } from './auth.validation.js';
+import { validate, asyncHandler, authRateLimiter, authenticate } from '@/middleware/index.js';
 
 const router = Router();
 
@@ -40,10 +31,6 @@ router.post(
   asyncHandler(authController.logout.bind(authController)),
 );
 
-router.get(
-  '/me',
-  authenticate,
-  asyncHandler(authController.me.bind(authController)),
-);
+router.get('/me', authenticate, asyncHandler(authController.me.bind(authController)));
 
 export default router;

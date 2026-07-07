@@ -17,6 +17,10 @@ COPY src ./src
 RUN npx prisma generate
 RUN npm run build
 
+# --- Production dependencies ---
+FROM deps AS prod-deps
+RUN npm prune --omit=dev
+
 # --- Production ---
 FROM base AS production
 ENV NODE_ENV=production
@@ -24,7 +28,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 express
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package.json ./

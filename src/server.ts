@@ -9,10 +9,7 @@ async function bootstrap() {
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    logger.info(
-      { port: env.PORT, env: env.NODE_ENV, prefix: env.API_PREFIX },
-      'Server started',
-    );
+    logger.info({ port: env.PORT, env: env.NODE_ENV, prefix: env.API_PREFIX }, 'Server started');
   });
 
   const shutdown = async (signal: string) => {

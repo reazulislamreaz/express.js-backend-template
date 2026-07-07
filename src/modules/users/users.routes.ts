@@ -1,16 +1,7 @@
 import { Router } from 'express';
 import { usersController } from './users.controller.js';
-import {
-  paginationSchema,
-  userIdParamSchema,
-  updateUserSchema,
-} from './users.validation.js';
-import {
-  validate,
-  asyncHandler,
-  authenticate,
-  authorize,
-} from '@/middleware/index.js';
+import { paginationSchema, userIdParamSchema, updateUserSchema } from './users.validation.js';
+import { validate, asyncHandler, authenticate, authorize } from '@/middleware/index.js';
 
 const router = Router();
 

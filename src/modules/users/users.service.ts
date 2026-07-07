@@ -61,6 +61,11 @@ export class UsersService {
       throw new ForbiddenError('You can only view your own activity');
     }
 
+    const userExists = await usersRepository.exists(userId);
+    if (!userExists) {
+      throw new NotFoundError('User');
+    }
+
     if (!env.MONGODB_ENABLED) {
       return [];
     }

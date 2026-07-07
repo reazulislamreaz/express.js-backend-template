@@ -2,6 +2,9 @@ import { prisma } from '@/lib/database/index.js';
 import type { User } from '@prisma/client';
 import type { RegisterInput } from './auth.validation.js';
 
+type RefreshRotationResult =
+  { status: 'rotated'; user: User } | { status: 'inactive' } | { status: 'invalid' };
+
 export class AuthRepository {
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -22,22 +25,63 @@ export class AuthRepository {
     });
   }
 
-  async createRefreshToken(userId: string, token: string, expiresAt: Date) {
+  async createRefreshToken(userId: string, tokenHash: string, expiresAt: Date) {
     return prisma.refreshToken.create({
-      data: { userId, token, expiresAt },
+      data: { userId, tokenHash, expiresAt },
     });
   }
 
-  async findRefreshToken(token: string) {
+  async rotateRefreshToken(
+    currentTokenHash: string,
+    nextTokenHash: string,
+    nextExpiresAt: Date,
+  ): Promise<RefreshRotationResult> {
+    return prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const revoked = await tx.refreshToken.updateMany({
+        where: {
+          tokenHash: currentTokenHash,
+          revokedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { revokedAt: now },
+      });
+
+      if (revoked.count !== 1) {
+        return { status: 'invalid' };
+      }
+
+      const stored = await tx.refreshToken.findUnique({
+        where: { tokenHash: currentTokenHash },
+        include: { user: true },
+      });
+
+      if (!stored?.user.isActive) {
+        return { status: 'inactive' };
+      }
+
+      await tx.refreshToken.create({
+        data: {
+          userId: stored.userId,
+          tokenHash: nextTokenHash,
+          expiresAt: nextExpiresAt,
+        },
+      });
+
+      return { status: 'rotated', user: stored.user };
+    });
+  }
+
+  async findRefreshTokenByHash(tokenHash: string) {
     return prisma.refreshToken.findUnique({
-      where: { token },
+      where: { tokenHash },
       include: { user: true },
     });
   }
 
-  async revokeRefreshToken(token: string) {
-    return prisma.refreshToken.update({
-      where: { token },
+  async revokeRefreshTokenByHash(tokenHash: string) {
+    return prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }

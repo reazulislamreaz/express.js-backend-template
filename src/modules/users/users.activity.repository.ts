@@ -35,11 +35,7 @@ export class UserActivityRepository {
   }
 
   async findByUserId(userId: string, limit = 50): Promise<UserActivity[]> {
-    return this.collection
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .toArray();
+    return this.collection.find({ userId }).sort({ createdAt: -1 }).limit(limit).toArray();
   }
 }
 

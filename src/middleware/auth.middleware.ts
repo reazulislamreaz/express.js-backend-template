@@ -1,10 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { env } from '@/config/env.js';
+import { prisma } from '@/lib/database/index.js';
 import { UnauthorizedError, ForbiddenError } from '@/shared/errors/index.js';
 import type { Role } from '@prisma/client';
 import { extractBearerToken, verifyJwt } from '@/shared/types/jwt.js';
+import type { JwtPayload } from '@/shared/types/jwt.js';
 
-export function authenticate(req: Request, _res: Response, next: NextFunction): void {
+export async function authenticate(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
   const token = extractBearerToken(req.headers.authorization);
 
   if (!token) {
@@ -12,12 +18,35 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     return;
   }
 
+  let payload: JwtPayload;
   try {
-    req.user = verifyJwt(token, env.JWT_SECRET);
-    next();
+    payload = verifyJwt(token, env.JWT_SECRET);
   } catch {
     next(new UnauthorizedError('Invalid or expired token'));
+    return;
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      isActive: true,
+    },
+  });
+
+  if (!user?.isActive) {
+    next(new UnauthorizedError('Account is inactive or no longer exists'));
+    return;
+  }
+
+  req.user = {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+  };
+  next();
 }
 
 export function authorize(...roles: Role[]) {

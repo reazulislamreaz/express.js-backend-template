@@ -16,6 +16,7 @@ export async function connectMongo(): Promise<Db | null> {
   db = client.db();
 
   await db.command({ ping: 1 });
+  await db.collection('user_activities').createIndex({ userId: 1, createdAt: -1 });
   logger.info('MongoDB connected');
 
   return db;

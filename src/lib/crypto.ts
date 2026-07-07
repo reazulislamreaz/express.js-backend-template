@@ -23,6 +23,10 @@ export function generateRefreshToken(): string {
   return crypto.randomBytes(64).toString('hex');
 }
 
+export function hashRefreshToken(token: string): string {
+  return crypto.createHmac('sha256', env.JWT_REFRESH_SECRET).update(token).digest('hex');
+}
+
 export function verifyAccessToken(token: string): JwtPayload {
   return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 }

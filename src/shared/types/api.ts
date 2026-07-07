@@ -24,10 +24,7 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-export function paginatedResponse<T>(
-  data: T[],
-  meta: PaginationMeta,
-): ApiResponse<T[]> {
+export function paginatedResponse<T>(data: T[], meta: PaginationMeta): ApiResponse<T[]> {
   return {
     success: true,
     data,
