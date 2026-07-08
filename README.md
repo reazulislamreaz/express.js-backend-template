@@ -13,7 +13,7 @@ Production-ready Express.js backend template with clean layered architecture, de
 - **Validation** — Zod schemas with middleware
 - **Logging** — Structured logging with Pino (request IDs, redaction)
 - **Docker** — Multi-stage Dockerfile + Docker Compose
-- **CI/CD** — GitHub Actions pipeline (lint, test, build, Docker)
+- **CI/CD** — GitHub Actions CI + GHCR Docker publish on main
 - **Testing** — Vitest with unit and integration tests
 
 ## Quick Start
@@ -161,6 +161,175 @@ Swagger UI is enabled by default in development and disabled in production. Over
 ```bash
 DOCS_ENABLED=true   # force enable
 DOCS_ENABLED=false  # force disable
+```
+
+## CI/CD
+
+GitHub Actions runs automatically on every push and pull request to `main` / `develop`.
+
+### CI (`ci.yml`)
+
+Single job pipeline:
+
+1. Install dependencies
+2. Lint + format check + type check
+3. Run tests (Postgres, MongoDB, Redis service containers)
+4. Build TypeScript
+
+### CD (`cd.yml`)
+
+Publishes a production Docker image to **GitHub Container Registry** (`ghcr.io`):
+
+| Trigger | When |
+| ------- | ---- |
+| CI success on `main` | After the CI workflow passes |
+| Git tag `v*.*.*` | e.g. `v1.0.0` |
+| Manual | Actions → CD → Run workflow |
+| VPS auto-deploy | After publish, if `VPS_DEPLOY_ENABLED=true` |
+
+Image tags: `latest`, commit SHA, and semver tags on releases.
+
+See **[VPS Deployment](#vps-deployment)** below for full server setup.
+
+**First-time setup** (for public repos):
+
+1. Push to `main` and wait for CI + CD to complete
+2. Go to **Packages** on GitHub → select the image → **Package settings** → change visibility to **Public** (if needed)
+3. Pull the image:
+
+```bash
+docker pull ghcr.io/<your-org>/express-template:latest
+```
+
+## VPS Deployment
+
+Deploy to your own VPS with Docker. CD can auto-deploy after each successful `main` build.
+
+### Architecture
+
+```
+GitHub Actions (CD) → ghcr.io image → SSH → VPS (docker compose)
+                                              ↓
+                                         Nginx + SSL (optional)
+```
+
+### 1. Prepare the VPS (one-time)
+
+On a fresh Ubuntu/Debian VPS:
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+
+# Create deploy directory
+sudo mkdir -p /opt/express-template
+sudo chown $USER:$USER /opt/express-template
+cd /opt/express-template
+```
+
+Copy these files to the VPS (via `scp` or clone the repo):
+
+```bash
+scp docker-compose.prod.yml .env.production.example deploy/nginx.conf.example \
+  user@your-vps:/opt/express-template/
+```
+
+On the VPS:
+
+```bash
+cd /opt/express-template
+cp .env.production.example .env
+nano .env   # set JWT secrets, POSTGRES_PASSWORD, CORS_ORIGINS, etc.
+```
+
+Start the stack for the first time (pull image manually or wait for CD):
+
+```bash
+export APP_IMAGE=ghcr.io/<your-org>/express-template:latest
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Run migrations and seed (first deploy only):
+
+```bash
+docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec app npm run db:seed
+```
+
+### 2. Nginx + SSL (recommended)
+
+```bash
+sudo apt install nginx certbot python3-certbot-nginx
+sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/express-template
+# Edit server_name to your domain
+sudo ln -s /etc/nginx/sites-available/express-template /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d api.yourdomain.com
+```
+
+See `deploy/nginx.conf.example` for the reverse proxy config. The app binds to `127.0.0.1:3000` only — not exposed directly to the internet.
+
+### 3. Enable auto-deploy from GitHub Actions
+
+In your GitHub repo:
+
+**Repository variable** (Settings → Secrets and variables → Actions → Variables):
+
+| Variable | Value |
+| -------- | ----- |
+| `VPS_DEPLOY_ENABLED` | `true` |
+
+**Repository secrets** (Settings → Secrets and variables → Actions → Secrets):
+
+| Secret | Description |
+| ------ | ----------- |
+| `VPS_HOST` | VPS IP or domain, e.g. `203.0.113.10` |
+| `VPS_USER` | SSH user, e.g. `deploy` |
+| `VPS_SSH_KEY` | Private SSH key (full PEM contents) |
+| `VPS_DEPLOY_PATH` | Deploy directory, e.g. `/opt/express-template` |
+| `GHCR_PAT` | GitHub PAT with `read:packages` (if image is private) |
+
+**SSH key setup on VPS:**
+
+```bash
+# On your local machine — add public key to VPS
+ssh-copy-id -i ~/.ssh/deploy_key.pub deploy@your-vps
+
+# Paste the *private* key contents into GitHub secret VPS_SSH_KEY
+```
+
+After setup, every push to `main` that passes CI will:
+
+1. Build & push Docker image to `ghcr.io`
+2. SSH into VPS → `docker compose pull` → `docker compose up -d`
+
+### 4. Manual deploy on VPS
+
+```bash
+cd /opt/express-template
+export APP_IMAGE=ghcr.io/<your-org>/express-template:latest
+export GHCR_TOKEN=ghp_xxx        # only if package is private
+export GHCR_USER=your-github-user
+./scripts/deploy.sh
+```
+
+Or trigger **Actions → CD → Run workflow** from GitHub.
+
+### 5. Useful VPS commands
+
+```bash
+# Logs
+docker compose -f docker-compose.prod.yml logs -f app
+
+# Restart
+docker compose -f docker-compose.prod.yml restart app
+
+# Status
+docker compose -f docker-compose.prod.yml ps
+
+# Run migrations after update
+docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 ```
 
 ## Environment Variables

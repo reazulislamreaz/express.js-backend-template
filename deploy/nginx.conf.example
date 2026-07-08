@@ -1,0 +1,25 @@
+# Example Nginx reverse proxy for the Express app on a VPS.
+# Place in /etc/nginx/sites-available/express-template
+# Then: sudo ln -s /etc/nginx/sites-available/express-template /etc/nginx/sites-enabled/
+#       sudo nginx -t && sudo systemctl reload nginx
+#
+# SSL with Certbot:
+#   sudo apt install certbot python3-certbot-nginx
+#   sudo certbot --nginx -d api.yourdomain.com
+
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+    }
+}
