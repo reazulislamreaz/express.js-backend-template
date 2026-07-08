@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { env } from '@/config/env.js';
-import type { JwtPayload } from '@/shared/types/jwt.types.js';
+import { JWT_ALGORITHM } from '@/shared/types/jwt.js';
 import type { Role } from '@prisma/client';
 
 export async function hashPassword(password: string): Promise<string> {
@@ -15,6 +15,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 export function generateAccessToken(payload: { sub: string; email: string; role: Role }): string {
   return jwt.sign(payload, env.JWT_SECRET, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 }
@@ -25,10 +26,6 @@ export function generateRefreshToken(): string {
 
 export function hashRefreshToken(token: string): string {
   return crypto.createHmac('sha256', env.JWT_REFRESH_SECRET).update(token).digest('hex');
-}
-
-export function verifyAccessToken(token: string): JwtPayload {
-  return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 }
 
 export function getRefreshTokenExpiry(): Date {

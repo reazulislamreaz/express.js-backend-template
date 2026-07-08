@@ -4,10 +4,15 @@ import { env } from '@/config/env.js';
 import { logger } from '@/lib/logger.js';
 import { connectDatabases, disconnectDatabases } from '@/lib/database/index.js';
 import { closeQueues, startQueueWorkers } from '@/lib/queue/index.js';
+import {
+  startTokenCleanupScheduler,
+  stopTokenCleanupScheduler,
+} from '@/lib/maintenance/token-cleanup.js';
 
 async function bootstrap() {
   await connectDatabases();
   await startQueueWorkers();
+  await startTokenCleanupScheduler();
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
@@ -17,6 +22,7 @@ async function bootstrap() {
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutting down gracefully');
     server.close(async () => {
+      await stopTokenCleanupScheduler();
       await closeQueues();
       await disconnectDatabases();
       logger.info('Server closed');
@@ -44,7 +50,9 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
   logger.fatal({ err }, 'Failed to start server');
-  Promise.allSettled([closeQueues(), disconnectDatabases()]).finally(() => {
-    process.exit(1);
-  });
+  Promise.allSettled([stopTokenCleanupScheduler(), closeQueues(), disconnectDatabases()]).finally(
+    () => {
+      process.exit(1);
+    },
+  );
 });

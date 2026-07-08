@@ -3,8 +3,8 @@ import { connectMongo, disconnectMongo } from './mongodb.js';
 import { connectRedis, disconnectRedis } from '@/lib/redis.js';
 
 export { prisma } from './postgres.js';
-export { getMongoDb, getCollection } from './mongodb.js';
-export { getRedis } from '@/lib/redis.js';
+export { getMongoDb, getCollection, isMongoConnected } from './mongodb.js';
+export { getRedis, isRedisConnected } from '@/lib/redis.js';
 
 export async function connectDatabases(): Promise<void> {
   await connectPostgres();

@@ -3,7 +3,10 @@ import type { User } from '@prisma/client';
 import type { RegisterInput } from './auth.validation.js';
 
 type RefreshRotationResult =
-  { status: 'rotated'; user: User } | { status: 'inactive' } | { status: 'invalid' };
+  | { status: 'rotated'; user: User }
+  | { status: 'inactive' }
+  | { status: 'invalid' }
+  | { status: 'reused' };
 
 export class AuthRepository {
   async findByEmail(email: string): Promise<User | null> {
@@ -38,6 +41,31 @@ export class AuthRepository {
   ): Promise<RefreshRotationResult> {
     return prisma.$transaction(async (tx) => {
       const now = new Date();
+      const stored = await tx.refreshToken.findUnique({
+        where: { tokenHash: currentTokenHash },
+        include: { user: true },
+      });
+
+      if (!stored) {
+        return { status: 'invalid' };
+      }
+
+      if (stored.revokedAt !== null) {
+        await tx.refreshToken.updateMany({
+          where: { userId: stored.userId, revokedAt: null },
+          data: { revokedAt: now },
+        });
+        return { status: 'reused' };
+      }
+
+      if (stored.expiresAt <= now) {
+        return { status: 'invalid' };
+      }
+
+      if (!stored.user.isActive) {
+        return { status: 'inactive' };
+      }
+
       const revoked = await tx.refreshToken.updateMany({
         where: {
           tokenHash: currentTokenHash,
@@ -49,15 +77,6 @@ export class AuthRepository {
 
       if (revoked.count !== 1) {
         return { status: 'invalid' };
-      }
-
-      const stored = await tx.refreshToken.findUnique({
-        where: { tokenHash: currentTokenHash },
-        include: { user: true },
-      });
-
-      if (!stored?.user.isActive) {
-        return { status: 'inactive' };
       }
 
       await tx.refreshToken.create({
@@ -91,6 +110,24 @@ export class AuthRepository {
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+  }
+
+  async cleanupExpiredRefreshTokens(revokedRetentionDays = 30): Promise<number> {
+    const now = new Date();
+    const revokedCutoff = new Date(now.getTime() - revokedRetentionDays * 24 * 60 * 60 * 1000);
+
+    const result = await prisma.refreshToken.deleteMany({
+      where: {
+        OR: [
+          { expiresAt: { lt: now } },
+          {
+            revokedAt: { not: null, lt: revokedCutoff },
+          },
+        ],
+      },
+    });
+
+    return result.count;
   }
 }
 

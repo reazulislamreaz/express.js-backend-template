@@ -2,14 +2,16 @@ import { doubleCsrf } from 'csrf-csrf';
 import { Request, Response } from 'express';
 import { env } from '@/config/env.js';
 
+const isProduction = env.NODE_ENV === 'production';
+
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => env.CSRF_SECRET ?? 'csrf-secret-not-configured',
   getSessionIdentifier: (req) => req.cookies?.['session-id'] ?? req.ip ?? 'anonymous',
-  cookieName: '__Host-csrf',
+  cookieName: isProduction ? '__Host-csrf' : 'csrf-token',
   cookieOptions: {
     httpOnly: true,
     sameSite: 'strict',
-    secure: env.NODE_ENV === 'production',
+    secure: isProduction,
     path: '/',
   },
 });

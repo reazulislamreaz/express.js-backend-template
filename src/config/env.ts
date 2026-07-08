@@ -43,6 +43,18 @@ const envSchema = z.object({
     .transform((v) => v === 'true')
     .default('true'),
 
+  DOCS_ENABLED: z
+    .union([z.string(), z.undefined()])
+    .transform((v) => {
+      if (v === undefined) {
+        return process.env.NODE_ENV !== 'production';
+      }
+      return v === 'true';
+    }),
+
+  TOKEN_CLEANUP_INTERVAL_MS: z.coerce.number().int().positive().default(86_400_000),
+  TOKEN_CLEANUP_REVOKED_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   LOG_PRETTY: z
     .string()

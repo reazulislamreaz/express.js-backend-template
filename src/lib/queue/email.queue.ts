@@ -2,6 +2,7 @@ import { JobsOptions, Queue, QueueEvents, Worker } from 'bullmq';
 import type { ConnectionOptions } from 'bullmq';
 import type { Job } from 'bullmq';
 import { env } from '@/config/env.js';
+import { isRedisConnected } from '@/lib/redis.js';
 import { logger } from '@/lib/logger.js';
 
 export interface EmailJobData {
@@ -60,6 +61,11 @@ export async function addEmailJob(data: EmailJobData, options?: JobsOptions) {
 export async function startEmailQueueWorker(): Promise<void> {
   if (!env.REDIS_ENABLED || !env.QUEUE_WORKERS_ENABLED) {
     logger.info('Email queue worker disabled');
+    return;
+  }
+
+  if (!isRedisConnected()) {
+    logger.warn('Email queue worker skipped — Redis is not connected');
     return;
   }
 

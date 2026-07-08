@@ -36,8 +36,6 @@ export function createApp() {
     }),
   );
 
-  app.use(env.API_PREFIX, docsRoutes);
-
   app.use(
     helmet({
       contentSecurityPolicy: env.NODE_ENV === 'production',
@@ -51,7 +49,7 @@ export function createApp() {
         if (!origin || corsOrigins.includes(origin) || corsOrigins.includes('*')) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          callback(null, false);
         }
       },
       credentials: true,
@@ -69,6 +67,10 @@ export function createApp() {
   app.use(xssSanitize);
   app.use(globalRateLimiter);
   app.use(csrfProtection);
+
+  if (env.DOCS_ENABLED) {
+    app.use(env.API_PREFIX, docsRoutes);
+  }
 
   app.use(env.API_PREFIX, routes);
 

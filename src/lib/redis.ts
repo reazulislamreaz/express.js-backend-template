@@ -3,6 +3,11 @@ import { env } from '@/config/env.js';
 import { logger } from '@/lib/logger.js';
 
 let redis: Redis | null = null;
+let redisConnected = false;
+
+export function isRedisConnected(): boolean {
+  return redisConnected && redis !== null;
+}
 
 export function getRedis(): Redis {
   if (!env.REDIS_ENABLED) {
@@ -34,18 +39,26 @@ export async function connectRedis(): Promise<void> {
     return;
   }
 
-  const client = getRedis();
-  if (client.status === 'end' || client.status === 'close') {
+  try {
+    const client = getRedis();
+    if (client.status === 'end' || client.status === 'close') {
+      redis = null;
+      redisConnected = false;
+    }
+
+    const activeClient = getRedis();
+    if (activeClient.status === 'wait') {
+      await activeClient.connect();
+    }
+
+    await activeClient.ping();
+    redisConnected = true;
+    logger.info('Redis connected');
+  } catch (err) {
+    redisConnected = false;
     redis = null;
+    logger.warn({ err }, 'Redis connection failed — continuing in degraded mode');
   }
-
-  const activeClient = getRedis();
-  if (activeClient.status === 'wait') {
-    await activeClient.connect();
-  }
-
-  await activeClient.ping();
-  logger.info('Redis connected');
 }
 
 export async function disconnectRedis(): Promise<void> {
@@ -53,6 +66,7 @@ export async function disconnectRedis(): Promise<void> {
 
   const client = redis;
   redis = null;
+  redisConnected = false;
   await client.quit();
   logger.info('Redis disconnected');
 }

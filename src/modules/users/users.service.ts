@@ -1,8 +1,8 @@
 import { NotFoundError, ForbiddenError } from '@/shared/errors/index.js';
 import { usersRepository } from './users.repository.js';
 import { userActivityRepository } from './users.activity.repository.js';
+import { isMongoConnected } from '@/lib/database/index.js';
 import type { PaginationInput, UpdateUserInput } from './users.validation.js';
-import { env } from '@/config/env.js';
 
 export class UsersService {
   async list(pagination: PaginationInput) {
@@ -29,8 +29,7 @@ export class UsersService {
       throw new ForbiddenError('You can only view your own profile');
     }
 
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    return user;
   }
 
   async update(id: string, input: UpdateUserInput, requesterId: string, requesterRole: string) {
@@ -45,7 +44,7 @@ export class UsersService {
 
     const updated = await usersRepository.update(id, input);
 
-    if (env.MONGODB_ENABLED) {
+    if (isMongoConnected()) {
       await userActivityRepository.log({
         userId: id,
         action: 'profile_updated',
@@ -66,7 +65,7 @@ export class UsersService {
       throw new NotFoundError('User');
     }
 
-    if (!env.MONGODB_ENABLED) {
+    if (!isMongoConnected()) {
       return [];
     }
 

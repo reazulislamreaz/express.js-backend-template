@@ -1,6 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getCollection } from '@/lib/database/index.js';
-import { env } from '@/config/env.js';
+import { getCollection, isMongoConnected } from '@/lib/database/index.js';
 import { logger } from '@/lib/logger.js';
 
 export interface UserActivity {
@@ -17,8 +16,8 @@ const COLLECTION = 'user_activities';
 
 export class UserActivityRepository {
   private get collection() {
-    if (!env.MONGODB_ENABLED) {
-      throw new Error('MongoDB is not enabled');
+    if (!isMongoConnected()) {
+      throw new Error('MongoDB is not connected');
     }
     return getCollection<UserActivity>(COLLECTION);
   }

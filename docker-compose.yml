@@ -11,6 +11,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/express_template?schema=public
       MONGODB_URI: mongodb://mongo:27017/express_template
       REDIS_URL: redis://redis:6379
+      DOCS_ENABLED: 'false'
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '@/lib/database/index.js';
 import { env } from '@/config/env.js';
-import { getMongoDb, getRedis } from '@/lib/database/index.js';
+import { getMongoDb, getRedis, isMongoConnected, isRedisConnected } from '@/lib/database/index.js';
 
 const router = Router();
 
@@ -27,21 +27,29 @@ router.get('/ready', async (_req: Request, res: Response) => {
   }
 
   if (env.MONGODB_ENABLED) {
-    try {
-      const db = getMongoDb();
-      await db.command({ ping: 1 });
-      checks.mongodb = 'ok';
-    } catch {
+    if (isMongoConnected()) {
+      try {
+        const db = getMongoDb();
+        await db.command({ ping: 1 });
+        checks.mongodb = 'ok';
+      } catch {
+        checks.mongodb = 'error';
+      }
+    } else {
       checks.mongodb = 'error';
     }
   }
 
   if (env.REDIS_ENABLED) {
-    try {
-      const redis = getRedis();
-      await redis.ping();
-      checks.redis = 'ok';
-    } catch {
+    if (isRedisConnected()) {
+      try {
+        const redis = getRedis();
+        await redis.ping();
+        checks.redis = 'ok';
+      } catch {
+        checks.redis = 'error';
+      }
+    } else {
       checks.redis = 'error';
     }
   }

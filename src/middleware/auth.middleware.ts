@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { env } from '@/config/env.js';
 import { prisma } from '@/lib/database/index.js';
 import { UnauthorizedError, ForbiddenError } from '@/shared/errors/index.js';
 import type { Role } from '@prisma/client';
-import { extractBearerToken, verifyJwt } from '@/shared/types/jwt.js';
-import type { JwtPayload } from '@/shared/types/jwt.js';
+import { extractBearerToken, verifyAccessToken } from '@/shared/types/jwt.js';
 
 export async function authenticate(
   req: Request,
@@ -18,9 +16,9 @@ export async function authenticate(
     return;
   }
 
-  let payload: JwtPayload;
+  let payload;
   try {
-    payload = verifyJwt(token, env.JWT_SECRET);
+    payload = verifyAccessToken(token);
   } catch {
     next(new UnauthorizedError('Invalid or expired token'));
     return;

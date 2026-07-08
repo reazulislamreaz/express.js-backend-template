@@ -107,7 +107,7 @@ src/
 | XSS              | Request body/query sanitization                          |
 | CSRF             | Optional via `CSRF_ENABLED=true` (cookie-based sessions) |
 | Password hashing | bcrypt (configurable rounds)                             |
-| JWT              | Access + refresh token rotation                          |
+| JWT              | HS256-pinned access tokens + hashed refresh token rotation with reuse detection |
 
 ## Admin Seed
 
@@ -152,6 +152,15 @@ REDIS_URL=redis://localhost:6379
 REDIS_ENABLED=true
 QUEUE_PREFIX=express-template
 QUEUE_WORKERS_ENABLED=true
+```
+
+## API Documentation
+
+Swagger UI is enabled by default in development and disabled in production. Override with:
+
+```bash
+DOCS_ENABLED=true   # force enable
+DOCS_ENABLED=false  # force disable
 ```
 
 ## Environment Variables

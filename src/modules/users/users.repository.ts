@@ -1,6 +1,27 @@
 import { prisma } from '@/lib/database/index.js';
-import type { User } from '@prisma/client';
 import type { PaginationInput } from './users.validation.js';
+
+const userPublicSelect = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  role: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+export type PublicUser = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: 'USER' | 'ADMIN';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export class UsersRepository {
   async findMany({ page, limit }: PaginationInput) {
@@ -11,16 +32,7 @@ export class UsersRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: userPublicSelect,
       }),
       prisma.user.count(),
     ]);
@@ -28,8 +40,11 @@ export class UsersRepository {
     return { users, total };
   }
 
-  async findById(id: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { id } });
+  async findById(id: string): Promise<PublicUser | null> {
+    return prisma.user.findUnique({
+      where: { id },
+      select: userPublicSelect,
+    });
   }
 
   async exists(id: string): Promise<boolean> {
@@ -44,16 +59,7 @@ export class UsersRepository {
     return prisma.user.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userPublicSelect,
     });
   }
 
@@ -61,6 +67,7 @@ export class UsersRepository {
     return prisma.user.update({
       where: { id },
       data: { isActive: false },
+      select: userPublicSelect,
     });
   }
 }

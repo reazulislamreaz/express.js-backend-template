@@ -58,6 +58,12 @@ export class AuthService {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
+    if (rotated.status === 'reused') {
+      throw new UnauthorizedError(
+        'Refresh token reuse detected. All sessions have been revoked for security.',
+      );
+    }
+
     if (rotated.status === 'inactive') {
       throw new UnauthorizedError('Account is deactivated');
     }
