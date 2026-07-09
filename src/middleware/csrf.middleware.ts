@@ -1,6 +1,7 @@
 import { doubleCsrf } from 'csrf-csrf';
 import { Request, Response } from 'express';
 import { env } from '@/config/env.js';
+import { extractBearerToken } from '@/shared/types/jwt.js';
 
 const isProduction = env.NODE_ENV === 'production';
 
@@ -18,6 +19,11 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 
 export function csrfProtection(req: Request, res: Response, next: () => void): void {
   if (!env.CSRF_ENABLED) {
+    next();
+    return;
+  }
+
+  if (extractBearerToken(req.headers.authorization)) {
     next();
     return;
   }

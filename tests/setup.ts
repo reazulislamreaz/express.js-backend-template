@@ -9,3 +9,5 @@ process.env.REDIS_ENABLED = 'false';
 process.env.QUEUE_WORKERS_ENABLED = 'false';
 process.env.CSRF_ENABLED = 'false';
 process.env.LOG_PRETTY = 'false';
+process.env.RATE_LIMIT_MAX = '1000';
+process.env.AUTH_RATE_LIMIT_MAX = '1000';

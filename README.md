@@ -93,6 +93,7 @@ src/
 | GET    | `/api/v1/users`              | Admin | List users (paginated)            |
 | GET    | `/api/v1/users/:id`          | Yes   | Get user by ID                    |
 | PATCH  | `/api/v1/users/:id`          | Yes   | Update user                       |
+| POST   | `/api/v1/users/:id/deactivate` | Admin | Deactivate user and revoke sessions |
 | GET    | `/api/v1/users/:id/activity` | Yes   | User activity log (MongoDB)       |
 
 ## Security
@@ -105,7 +106,7 @@ src/
 | SQL injection    | Prisma parameterized queries                             |
 | NoSQL injection  | Custom middleware (Express 5 compatible)                 |
 | XSS              | Request body/query sanitization                          |
-| CSRF             | Optional via `CSRF_ENABLED=true` (cookie-based sessions) |
+| CSRF             | Optional via `CSRF_ENABLED=true` (skipped for Bearer token requests) |
 | Password hashing | bcrypt (configurable rounds)                             |
 | JWT              | HS256-pinned access tokens + hashed refresh token rotation with reuse detection |
 

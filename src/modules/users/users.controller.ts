@@ -31,6 +31,12 @@ export class UsersController {
     const activities = await usersService.getActivity(id, req.user!.sub, req.user!.role);
     res.json(successResponse(activities));
   }
+
+  async deactivate(req: Request, res: Response): Promise<void> {
+    const { id } = req.params as { id: string };
+    const user = await usersService.deactivate(id, req.user!.sub, req.user!.role);
+    res.json(successResponse(user));
+  }
 }
 
 export const usersController = new UsersController();

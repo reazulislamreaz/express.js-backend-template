@@ -35,7 +35,8 @@ fi
 
 echo "Deploying $APP_IMAGE ..."
 docker compose -f "$COMPOSE_FILE" pull app
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+docker compose -f "$COMPOSE_FILE" up -d --remove-orphans --force-recreate app
+docker compose -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy
 
 echo "Pruning unused images ..."
 docker image prune -f

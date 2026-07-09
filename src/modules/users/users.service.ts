@@ -1,7 +1,9 @@
-import { NotFoundError, ForbiddenError } from '@/shared/errors/index.js';
+import { NotFoundError, ForbiddenError, ServiceUnavailableError } from '@/shared/errors/index.js';
+import { env } from '@/config/env.js';
 import { usersRepository } from './users.repository.js';
 import { userActivityRepository } from './users.activity.repository.js';
 import { isMongoConnected } from '@/lib/database/index.js';
+import { authRepository } from '@/modules/auth/auth.repository.js';
 import type { PaginationInput, UpdateUserInput } from './users.validation.js';
 
 export class UsersService {
@@ -65,11 +67,47 @@ export class UsersService {
       throw new NotFoundError('User');
     }
 
+    if (env.MONGODB_ENABLED && !isMongoConnected()) {
+      throw new ServiceUnavailableError('Activity log is temporarily unavailable');
+    }
+
     if (!isMongoConnected()) {
       return [];
     }
 
     return userActivityRepository.findByUserId(userId);
+  }
+
+  async deactivate(id: string, requesterId: string, requesterRole: string) {
+    if (requesterRole !== 'ADMIN') {
+      throw new ForbiddenError('Only administrators can deactivate users');
+    }
+
+    if (requesterId === id) {
+      throw new ForbiddenError('You cannot deactivate your own account');
+    }
+
+    const user = await usersRepository.findById(id);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    if (!user.isActive) {
+      return user;
+    }
+
+    const deactivated = await usersRepository.deactivate(id);
+    await authRepository.revokeAllUserTokens(id);
+
+    if (isMongoConnected()) {
+      await userActivityRepository.log({
+        userId: id,
+        action: 'account_deactivated',
+        metadata: { deactivatedBy: requesterId },
+      });
+    }
+
+    return deactivated;
   }
 }
 

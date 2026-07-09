@@ -112,6 +112,29 @@ export class AuthRepository {
     });
   }
 
+  async pruneExcessRefreshTokens(userId: string, maxSessions: number): Promise<void> {
+    const now = new Date();
+    const activeTokens = await prisma.refreshToken.findMany({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+
+    const excess = activeTokens.slice(maxSessions);
+    if (excess.length === 0) {
+      return;
+    }
+
+    await prisma.refreshToken.updateMany({
+      where: { id: { in: excess.map((token) => token.id) } },
+      data: { revokedAt: now },
+    });
+  }
+
   async cleanupExpiredRefreshTokens(revokedRetentionDays = 30): Promise<number> {
     const now = new Date();
     const revokedCutoff = new Date(now.getTime() - revokedRetentionDays * 24 * 60 * 60 * 1000);

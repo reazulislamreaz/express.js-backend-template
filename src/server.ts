@@ -21,6 +21,11 @@ async function bootstrap() {
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutting down gracefully');
+
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+
     server.close(async () => {
       await stopTokenCleanupScheduler();
       await closeQueues();
@@ -39,7 +44,8 @@ async function bootstrap() {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   process.on('unhandledRejection', (reason) => {
-    logger.error({ reason }, 'Unhandled rejection');
+    logger.fatal({ reason }, 'Unhandled rejection');
+    process.exit(1);
   });
 
   process.on('uncaughtException', (err) => {

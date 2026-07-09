@@ -3,6 +3,16 @@ import type { ConnectionOptions } from 'bullmq';
 import type { Job } from 'bullmq';
 import { env } from '@/config/env.js';
 import { isRedisConnected } from '@/lib/redis.js';
+
+function assertRedisAvailable(): void {
+  if (!env.REDIS_ENABLED) {
+    throw new Error('Email queue is unavailable because Redis is disabled');
+  }
+
+  if (!isRedisConnected()) {
+    throw new Error('Email queue is unavailable because Redis is not connected');
+  }
+}
 import { logger } from '@/lib/logger.js';
 
 export interface EmailJobData {
@@ -36,9 +46,7 @@ function getQueueConnection(): ConnectionOptions {
 }
 
 export function getEmailQueue(): EmailQueue {
-  if (!env.REDIS_ENABLED) {
-    throw new Error('Email queue is unavailable because Redis is disabled');
-  }
+  assertRedisAvailable();
 
   if (!emailQueue) {
     emailQueue = new Queue<EmailJobData, unknown, 'send'>(EMAIL_QUEUE_NAME, {

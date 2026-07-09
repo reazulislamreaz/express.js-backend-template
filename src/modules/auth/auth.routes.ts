@@ -21,12 +21,14 @@ router.post(
 
 router.post(
   '/refresh',
+  authRateLimiter,
   validate(refreshTokenSchema),
   asyncHandler(authController.refresh.bind(authController)),
 );
 
 router.post(
   '/logout',
+  authRateLimiter,
   validate(refreshTokenSchema),
   asyncHandler(authController.logout.bind(authController)),
 );

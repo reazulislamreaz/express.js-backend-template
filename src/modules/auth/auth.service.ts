@@ -17,7 +17,7 @@ export class AuthService {
   async register(input: RegisterInput): Promise<AuthResponse> {
     const existing = await authRepository.findByEmail(input.email);
     if (existing) {
-      throw new ConflictError('Email already registered');
+      throw new ConflictError('Unable to complete registration');
     }
 
     const passwordHash = await hashPassword(input.password);
@@ -74,6 +74,11 @@ export class AuthService {
       role: rotated.user.role,
     });
 
+    await authRepository.pruneExcessRefreshTokens(
+      rotated.user.id,
+      env.MAX_REFRESH_SESSIONS_PER_USER,
+    );
+
     return {
       user: toSafeUser(rotated.user),
       tokens: {
@@ -94,6 +99,7 @@ export class AuthService {
     const expiresAt = getRefreshTokenExpiry();
 
     await authRepository.createRefreshToken(userId, hashRefreshToken(refreshToken), expiresAt);
+    await authRepository.pruneExcessRefreshTokens(userId, env.MAX_REFRESH_SESSIONS_PER_USER);
 
     return {
       accessToken,

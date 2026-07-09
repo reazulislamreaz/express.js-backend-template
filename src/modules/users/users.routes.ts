@@ -33,4 +33,11 @@ router.get(
   asyncHandler(usersController.getActivity.bind(usersController)),
 );
 
+router.post(
+  '/:id/deactivate',
+  authorize('ADMIN'),
+  validate(userIdParamSchema, 'params'),
+  asyncHandler(usersController.deactivate.bind(usersController)),
+);
+
 export default router;

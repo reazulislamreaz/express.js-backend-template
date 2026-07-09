@@ -7,7 +7,7 @@ const envSchema = z.object({
   APP_NAME: z.string().default('express-template'),
 
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
@@ -54,12 +54,17 @@ const envSchema = z.object({
 
   TOKEN_CLEANUP_INTERVAL_MS: z.coerce.number().int().positive().default(86_400_000),
   TOKEN_CLEANUP_REVOKED_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+  MAX_REFRESH_SESSIONS_PER_USER: z.coerce.number().int().positive().default(10),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   LOG_PRETTY: z
-    .string()
-    .transform((v) => v === 'true')
-    .default('true'),
+    .union([z.string(), z.undefined()])
+    .transform((v) => {
+      if (v === undefined) {
+        return process.env.NODE_ENV === 'development';
+      }
+      return v === 'true';
+    }),
 });
 
 export type Env = z.infer<typeof envSchema>;
